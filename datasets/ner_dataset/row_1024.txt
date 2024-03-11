@@ -1,0 +1,1 @@
+A timeline of the Albanian earthquake and the following aftershocks  (4+ magnitude) Tools used: Tableau and Mapbox 
