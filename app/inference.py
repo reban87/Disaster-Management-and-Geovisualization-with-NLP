@@ -6,6 +6,7 @@ from transformers import (
     pipeline,
 )
 
+
 import torch
 from torch.utils.data import Dataset, DataLoader
 
@@ -25,7 +26,7 @@ roberta_tokenizer = RobertaTokenizer.from_pretrained(
 
 # Load DistilBERT entity extractor
 distilbert_model = AutoModelForTokenClassification.from_pretrained(
-    "../models/bert-base-uncased-finetuned/checkpoint-500"
+    "../models/bert-base-uncased-finetuned-v2/checkpoint-500"
 )
 distilbert_tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
