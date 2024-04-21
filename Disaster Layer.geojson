@@ -1,0 +1,6 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "location": "kathmandu district", "date": "2023-02-06", "hazard_type": "flood", "latitude": 27.69387265, "longitude": 85.325516755966618 }, "geometry": { "type": "Point", "coordinates": [ 85.325516755966618, 27.69387265 ] } }
+]
+}
