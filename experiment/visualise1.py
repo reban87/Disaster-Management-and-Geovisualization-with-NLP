@@ -4,11 +4,10 @@ from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 import folium
 import json
+import webbrowser
 
 
-def generate_disaster_map(
-    data, layer_title, tags, user_agent="map_app", existing_map=None
-):
+def generate_disaster_map(data, layer_title, tags, user_agent="map_app"):
     # Function to geocode location data
     def geocode_locations(df, location_column):
         geolocator = Nominatim(user_agent=user_agent)
@@ -51,25 +50,20 @@ def generate_disaster_map(
         if gdf is not None:
             geojson_file = f"{layer_title}.geojson"
             gdf.to_file(geojson_file, driver="GeoJSON")
+            print(f"GeoJSON file '{geojson_file}' is ready for upload.")
         else:
             print("GeoDataFrame creation failed.")
-            return None
+            return
     else:
         print("Geocode failed or resulted in empty DataFrame.")
-        return None
+        return
 
     # Load GeoJSON and create the map
     with open(geojson_file, "r") as f:
         geojson_data = json.load(f)
 
-    # Set initial map center and create map if not existing
     map_center = [27.7172, 85.3240]  # Coordinates for Kathmandu, Nepal
-    if existing_map is None:
-        result_map = folium.Map(
-            location=map_center, zoom_start=7, tiles="OpenStreetMap"
-        )
-    else:
-        result_map = existing_map
+    result_map = folium.Map(location=map_center, zoom_start=7, tiles="OpenStreetMap")
 
     # Define color for each hazard type
     hazard_colors = {
@@ -86,7 +80,7 @@ def generate_disaster_map(
         date = feature["properties"].get("date", "Unknown date")
         location = feature["properties"].get("location", "Unknown location")
         tooltip_text = (
-            f"Disaster Type: {hazard_type}<br>Date: {date}<br>Location: {location}"
+            f"  Disaster Type: {hazard_type}<br>Date: {date}<br>Location: {location}"
         )
         color = hazard_colors.get(hazard_type.lower(), "gray")
         coordinates = feature["geometry"]["coordinates"]
@@ -100,3 +94,13 @@ def generate_disaster_map(
         ).add_to(result_map)
 
     return result_map
+
+    # # Save the map to an HTML file and open it in a web browser
+    # html_file = "output_map.html"
+    # result_map.save(html_file)
+    # webbrowser.open(html_file, new=2)
+
+
+# # Example usage of the function
+# data = {"location": "Sindhupalchowk", "hazard_type": "landslide", "date": "2024-04-20"}
+# generate_disaster_map(data, "Disaster Layer", "Disaster Data")

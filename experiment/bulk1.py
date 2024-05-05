@@ -1,6 +1,8 @@
 import streamlit as st
+import pandas as pd
 import requests
 import moment
+from io import StringIO
 from visualise import generate_disaster_map
 from streamlit_folium import folium_static
 
@@ -28,13 +30,30 @@ with st.sidebar:
     user_input = st.text_area("Enter your text here:", height=200)
     classify_button = st.button("Classify Text")
     ner_button = st.button("Extract Entities")
+    uploaded_file = st.file_uploader("Upload CSV file", type="csv")
+    if uploaded_file:
+        data = pd.read_csv(uploaded_file)
+        if "text" in data.columns:
+            process_button = st.button("Process Uploaded Texts")
+        else:
+            st.error("CSV must have a column named 'text'.")
+
+
+# Function to call API endpoints
+def process_text(api_url, input_text):
+    response = requests.post(api_url, json={"text": input_text})
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
 
 # Display classification result
 st.subheader("Classification Results")
 if classify_button:
-    response = requests.post("http://0.0.0.0:5000/predict", json={"text": user_input})
-    if response.status_code == 200:
-        st.session_state["classification_result"] = response.json().get("result", "")
+    response = process_text("http://0.0.0.0:5000/predict", user_input)
+    if response:
+        st.session_state["classification_result"] = response.get("result", "")
     else:
         st.session_state["classification_result"] = (
             "Failed to get response from classification API."
@@ -48,9 +67,9 @@ st.text_input(
 # Display NER results
 st.subheader("NER Results")
 if ner_button:
-    response = requests.post("http://0.0.0.0:5000/extract", json={"text": user_input})
-    if response.status_code == 200:
-        data = response.json()
+    response = process_text("http://0.0.0.0:5000/extract", user_input)
+    if response:
+        data = response
         location_set = set(
             filter(
                 lambda x: x != "nan", data["results"]["entities"].get("location", [])
@@ -103,3 +122,55 @@ if ner_button and location_set and hazard_type_set:
         st.session_state["map_generated"] = True
         folium_static(result_map)
         st.success("Map has been successfully generated")
+
+# Process uploaded CSV if available and button pressed
+if "process_button" in locals() and process_button:
+    results = []
+    for text in data["text"]:
+        classification_result = process_text("http://0.0.0.0:5000/predict", text)
+        ner_result = process_text("http://0.0.0.0:5000/extract", text)
+        result_entry = {
+            "text": text,
+            "classification": (
+                classification_result.get("result")
+                if classification_result
+                else "Error"
+            ),
+            "location": (
+                ", ".join(
+                    set(
+                        filter(
+                            lambda x: x != "nan",
+                            ner_result["results"]["entities"].get("location", []),
+                        )
+                    )
+                )
+                if ner_result
+                else "Error"
+            ),
+            "date": (
+                ", ".join(
+                    set(
+                        [
+                            moment.date(d).format("YYYY-MM-DD")
+                            for d in ner_result["results"]["entities"].get("date", [])
+                        ]
+                    )
+                )
+                if ner_result
+                else "Error"
+            ),
+            "hazard_type": (
+                ", ".join(set(ner_result["results"]["entities"].get("hazard_type", [])))
+                if ner_result
+                else "Error"
+            ),
+        }
+        results.append(result_entry)
+    results_df = pd.DataFrame(results)
+    st.download_button(
+        label="Download Results as CSV",
+        data=results_df.to_csv(index=False),
+        file_name="processed_results.csv",
+        mime="text/csv",
+    )
