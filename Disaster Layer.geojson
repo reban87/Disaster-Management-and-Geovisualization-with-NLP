@@ -1,6 +1,6 @@
 {
 "type": "FeatureCollection",
 "features": [
-{ "type": "Feature", "properties": { "location": "sunsari district", "date": "2023-07-13", "hazard_type": "flood", "latitude": 26.5882743, "longitude": 87.1387569 }, "geometry": { "type": "Point", "coordinates": [ 87.1387569, 26.5882743 ] } }
+{ "type": "Feature", "properties": { "location": "pyuthan", "date": "2023-07-14", "hazard_type": "earthquake", "latitude": 28.1275303, "longitude": 82.849442198888056 }, "geometry": { "type": "Point", "coordinates": [ 82.849442198888056, 28.1275303 ] } }
 ]
 }
